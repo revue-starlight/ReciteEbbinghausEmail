@@ -1,32 +1,50 @@
-import { Injectable } from '@nestjs/common';
-import { Mail } from 'src/protocol/mail.interface';
-
+import { Injectable, Logger } from '@nestjs/common';
+import { Mail, GetEmailRequest, GetMailResponse,SetEmailRequest, SetMailResponse } from 'protocols/email';
+import { createClient } from 'redis'
 @Injectable()
-export class MailService{
-    _mailList:Mail[];
-    
-    async sendAllMail(){
-        console.log("fix me");
-    }
-    async sendMail(mail:Mail){
-        console.log("send mail~");
-    }
-    async addMail(mail:Mail){
-        this._mailList.push(mail);
-    }
-    async delMail(mail:Mail):Promise<any>{
-        let index: number | undefined;
-        if ((index = this._mailList.indexOf(mail)) == -1){
-            throw new Error("can't find existing mail");
-        } else {
-            try {
-                this._mailList.splice(index,1);
-            } catch (error){
-                console.log(error);
-            }
+export class MailService {
+    public static RedisKeys = {
+        R_Hash_EMAIL: 'mail'
+    };
+    private readonly logger = new Logger("MailService");
+    private readonly client = createClient();
+    constructor(){}
+
+    async getMail(req:GetEmailRequest): Promise<GetMailResponse> {
+        let ret : GetMailResponse = {
+            statusCode: 0x0,
+            status: '',
+            mail: null
+        };
+        this.logger.debug("getMail");
+        try {
+            ret.mail = JSON.parse(
+                (await this.client
+                .hGet(MailService.RedisKeys.R_Hash_EMAIL,
+                    req.emailId.toString()
+                ))
+            );
+        } catch (err) {
+            this.logger.log('get Mail Redis error',err);
+            ret.mail = null;
+            ret.statusCode = 0x4 // redis error;
+            ret.status = "redis error";
+            return ret;
         }
+        return ret;
     }
-    get mailList(){
-        return this._mailList;
+
+    async setMail(req:SetEmailRequest): Promise<SetMailResponse> {
+        this.logger.debug("setMail");
+        let ret = new SetMailResponse;
+        //this.client.
+        return null;
     }
+    async delMail(req:GetEmailRequest): Promise<any> {
+        this.logger.debug("modifyMail");
+    }
+    async addMail(req:GetEmailRequest): Promise<any> {
+        this.logger.debug("addMail");
+    }
+
 }
