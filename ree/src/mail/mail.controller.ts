@@ -4,23 +4,23 @@ import { AddEmailRequestDto, DeleteEmailRequestDto, ModifyEmailRequestDto } from
 @Controller('mail')
 export class MailController {
     private readonly logger = new Logger("MailController");
-    @Get(':id')
+    @Get('get/:id')
     async getMailReq(@Param('id') id:string):Promise<GetMailResponse>{
         this.logger.log("get req");this.logger.log(id);
         //FIXME
         return null;
     }
 
-    @Post('modify')
-    async modifyMailReq(@Body() req:ModifyEmailRequestDto):Promise<SetMailResponse>{
+    @Post('set')
+    async setMailReq(@Body() req:ModifyEmailRequestDto):Promise<SetMailResponse>{
         this.logger.log("modify req");this.logger.log(req);
         // Fixme
         return null;
     }
 
-    @Post('delete')
-    async deleteMailReq(@Body() req:DeleteEmailRequestDto):Promise<DelMailResponse>{
-        this.logger.log("del req");this.logger.log(req);
+    @Post('del/:id')
+    async delMailReq(@Param('id') id:string):Promise<DelMailResponse>{
+        
         // Fixme
         return null;
     }
@@ -28,7 +28,10 @@ export class MailController {
     @Post('add')
     async addMailReq(@Body() req:AddEmailRequestDto):Promise<AddMailResponse>{
         // Fixme
-        return null;
+        let p = new AddMailResponse;
+        p.status = "hi";
+        p.statusCode = 0x1;
+        return p;
     }
 
 }

@@ -2,6 +2,7 @@ export type MailUrl = string;
 
 export class Mail{
     url: MailUrl;
+    userId?: string;
 }
 
 export enum MailStatus {
@@ -45,20 +46,21 @@ export class DelMailResponse implements MailResponse {
 
 
 
-export interface EmailRequest{}
+export interface MailRequest{}
 
-export class AddEmailRequest implements EmailRequest{
-    email: MailUrl;
+export class AddMailRequest implements MailRequest{
+    mail: MailUrl;
 }
 
-export class SetEmailRequest implements EmailRequest{
-    emailId: string;
+export class SetMailRequest implements MailRequest{
+    mailId: string;
+    mail: Mail;
 }
 
-export class DelEmailRequest implements EmailRequest{
-    email: MailUrl;
+export class DelMailRequest implements MailRequest{
+    mailId: string;
 }
 
-export class GetEmailRequest {
-    emailId: string;
+export class GetMailRequest implements MailRequest{
+    mailId: string;
 }
