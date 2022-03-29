@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Snowflake } from 'nodejs-snowflake';
+import { getRedisRequest } from 'protocols/data';
 import { GetMailRequest, GetMailResponse,SetMailRequest, SetMailResponse, MailStatus, DelMailRequest, DelMailResponse, AddMailRequest, AddMailResponse, Mail } from 'protocols/email';
 import { createClient } from 'redis'
+import { DataService } from 'src/data/data.service';
 @Injectable()
 export class MailService {
     public static RedisKeys = {
@@ -9,20 +12,18 @@ export class MailService {
     };
     private readonly logger = new Logger("MailService");
     private readonly client = createClient();
-    constructor(){}
+    constructor(private readonly dataService:DataService){}
 
-    private async getId():Promise <number> {
-        if (MailService.idAble == 1)
-            this.client.INCR(MailService.RedisKeys.R_EMAIL_SUM_COUNT);
-        else {
-            // FIXME when database is added
-            this.client.setNX(MailService.RedisKeys.R_EMAIL_SUM_COUNT,'0');
-            MailService.idAble = 1;
-        }
-        return 1;
+    /**
+     * use snowflake to generate ID
+     * @returns number: Id
+     */
+    private async getId():Promise <string> {
+        const id = new Snowflake().getUniqueID().toString();
+        return id;
     }
     async getMail(req:GetMailRequest): Promise<GetMailResponse> {
-        let id = req.mailId;
+        const id = req.mailId;
         let ret : GetMailResponse = {
             statusCode: 0x0,
             status: '',
@@ -33,7 +34,7 @@ export class MailService {
             ret.mail = JSON.parse(
                 (await this.client
                 .hGet(MailService.RedisKeys.R_Hash_EMAIL,
-                    id.toString()
+                    id
                 ))
             );
         } catch (err) {
@@ -48,8 +49,8 @@ export class MailService {
 
     async setMail(req:SetMailRequest): Promise<SetMailResponse> {
         this.logger.debug("setMail");
-        let id = req.mailId;
-        let mail = req.mail;
+        const id = req.mailId;
+        const mail = req.mail;
         let ret = new SetMailResponse;
         ret.statusCode = MailStatus.Success;
         try {
@@ -79,19 +80,29 @@ export class MailService {
         return ret;
         
     }
-    async addMail(req:AddMailRequest): Promise<AddMailResponse> {
+    // async addMail(req:AddMailRequest): Promise<AddMailResponse> {
+    //     this.logger.debug("addMail");
+    //     let ret = new AddMailResponse;
+    //     ret.statusCode = MailStatus.Success;
+    //     try {
+    //         let id = await this.client.HLEN(MailService.RedisKeys.R_Hash_EMAIL);
+    //         id++;
+    //         this.client.hSet(MailService.RedisKeys.R_Hash_EMAIL,
+    //             id,);
+    //     }
+    //     return ret;
+    // }
 
-        this.logger.debug("addMail");
-        let ret = new AddMailResponse;
-        ret.statusCode = MailStatus.Success;
-        try {
-            await this.client.hSetNX(MailService.RedisKeys.R_Hash_EMAIL,);
-            let id = await this.client.HLEN(MailService.RedisKeys.R_Hash_EMAIL);
-            id++;
-            this.client.hSet(MailService.RedisKeys.R_Hash_EMAIL,
-                id.toString());
-        }
-        return ret;
+    
+    async testFunction(req: AddMailRequest):Promise<AddMailResponse> {
+        const id = await this.getId();
+        await this.client.hSet(MailService.RedisKeys.R_Hash_EMAIL,id,JSON.stringify(req));
+        const redisReq: getRedisRequest = {
+            obj: this.client,
+            method: this.client.hSet,
+            arg: [MailService.RedisKeys.R_Hash_EMAIL,id,JSON.stringify(req)],
+        };
+        this.dataService.get(redisReq,null);
+        return null;
     }
-
 }
