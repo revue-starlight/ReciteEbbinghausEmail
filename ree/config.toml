@@ -1,0 +1,5 @@
+[database]
+host='10.0.0.97'
+ports=3306
+user="root"
+password="your-fucking-password"

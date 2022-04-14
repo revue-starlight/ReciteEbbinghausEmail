@@ -4,6 +4,8 @@ import { getRedisRequest } from 'protocols/data';
 import { GetMailRequest, GetMailResponse,SetMailRequest, SetMailResponse, MailStatus, DelMailRequest, DelMailResponse, AddMailRequest, AddMailResponse, Mail } from 'protocols/email';
 import { createClient } from 'redis'
 import { DataService } from 'src/data/data.service';
+import * as mariadb from 'mariadb'
+import { ConfigService } from 'src/config/config.service';
 @Injectable()
 export class MailService {
     public static RedisKeys = {
@@ -12,7 +14,17 @@ export class MailService {
     };
     private readonly logger = new Logger("MailService");
     private readonly client = createClient();
-    constructor(private readonly dataService:DataService){}
+    constructor(private readonly dataService:DataService,
+                private readonly configService:ConfigService){
+        const config = this.configService.getConfig();
+        const x = mariadb.createConnection({
+            host: config.database.host,
+            port: config.database.port,
+            user: config.database.user,
+            password: config.database.password
+        });
+        x.then((conn)=>this.logger.log(conn.serverVersion())).catch((reason)=>Logger.error(reason));
+    }
 
     /**
      * use snowflake to generate ID
@@ -30,21 +42,32 @@ export class MailService {
             mail: null
         };
         this.logger.debug("getMail");
-        try {
-            ret.mail = JSON.parse(
-                (await this.client
-                .hGet(MailService.RedisKeys.R_Hash_EMAIL,
-                    id
-                ))
-            );
-        } catch (err) {
-            this.logger.log('get Mail Redis error',err);
-            ret.mail = null;
-            ret.statusCode = MailStatus.RedisError; // redis error;
-            ret.status = "redis error";
-            return ret;
+        const redisReq : getRedisRequest = {
+            obj: this.client,
+            method: this.client.hSet,
+            arg: [
+                MailService.RedisKeys.R_Hash_EMAIL,
+                id
+            ]
         }
-        return ret;
+        this.dataService.dbOp(redisReq,null);
+        // try {
+        //     ret.mail = JSON.parse(
+        //         (await this.client
+        //         .hGet(MailService.RedisKeys.R_Hash_EMAIL,
+        //             id
+        //         ))
+        //     );
+        // } catch (err) {
+        //     this.logger.log('get Mail Redis error',err);
+        //     ret.mail = null;
+        //     ret.statusCode = MailStatus.RedisError; // redis error;
+        //     ret.status = "redis error";
+        //     return ret;
+        // }
+        // return ret;
+
+        return null;
     }
 
     async setMail(req:SetMailRequest): Promise<SetMailResponse> {
@@ -102,7 +125,7 @@ export class MailService {
             method: this.client.hSet,
             arg: [MailService.RedisKeys.R_Hash_EMAIL,id,JSON.stringify(req)],
         };
-        this.dataService.get(redisReq,null);
+        //this.dataService.get(redisReq,null);
         return null;
     }
 }
