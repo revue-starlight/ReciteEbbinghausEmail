@@ -6,6 +6,7 @@ import { createClient } from 'redis'
 import { DataService } from 'src/data/data.service';
 import * as mariadb from 'mariadb'
 import { ConfigService } from 'src/config/config.service';
+import { isEmail } from 'class-validator';
 @Injectable()
 export class MailService {
     public static RedisKeys = {
@@ -14,16 +15,11 @@ export class MailService {
     };
     private readonly logger = new Logger("MailService");
     private readonly client = createClient();
+
     constructor(private readonly dataService:DataService,
                 private readonly configService:ConfigService){
-        const config = this.configService.getConfig();
-        const x = mariadb.createConnection({
-            host: config.database.host,
-            port: config.database.port,
-            user: config.database.user,
-            password: config.database.password
-        });
-        x.then((conn)=>this.logger.log(conn.serverVersion())).catch((reason)=>Logger.error(reason));
+
+        
     }
 
     /**
