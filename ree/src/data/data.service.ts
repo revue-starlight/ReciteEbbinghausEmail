@@ -10,15 +10,16 @@ import * as mariadb from "mariadb";
 export class DataService {
     
     private readonly logger = new Logger("dataService");
+    private readonly conn;
     constructor(private configService:ConfigService){
         const config = this.configService.getConfig();
-        const x = mariadb.createConnection({
+        this.conn = mariadb.createConnection({
             host: config.database.host,
             port: config.database.port,
             user: config.database.user,
             password: config.database.password
         });
-        x.then((conn)=>this.logger.log(conn.serverVersion())).catch((reason)=>Logger.error(reason));
+        this.conn.then((conn)=>this.logger.log(conn.serverVersion())).catch((reason)=>Logger.error(reason));
 
         
     }
@@ -26,12 +27,19 @@ export class DataService {
 
     }
 
-    public checkDBavaliable(){
+    /**
+     * 为什么不用 option<T> 呢? 这只是一个玩具
+     * @returns 1 for avaliable 0 for unavaliable
+     */
+    public checkDBavaliable(): number{
+        // if database exist
+        
 
+        return 1;
     }
 
     public addBasicDB(){
-        
+
     }
     public check
     public async dbOp(redisReq: getRedisRequest,dbReq:getDBRequest): Promise<string>{
